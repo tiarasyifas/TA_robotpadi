@@ -8,6 +8,8 @@ from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch.actions import RegisterEventHandler
 from launch.event_handlers import OnProcessExit
+from launch.actions import ExecuteProcess
+
 
 def generate_launch_description():
 
@@ -176,6 +178,22 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time}],
     )
 
+    # Node untuk bridge ke Arduino
+    arduino_driver_node = Node(
+        package='arduino_driver',
+        executable='arduino_driver',
+        name='cmd_vel_serial_bridge', # Sesuaikan dengan nama di dalam script Python
+        output='screen',
+        emulate_tty=True, 
+        remappings=[
+            ('/cmd_vel', '/cmd_vel_unstamped')
+        ]  # Berguna untuk memastikan output print() muncul
+    )
+    run_plotjuggler = ExecuteProcess(
+        cmd=['ros2', 'run', 'plotjuggler', 'plotjuggler'],
+        output='screen',
+        shell=True,
+    )
     # Node untuk Sliding Mode Controller
 
     # smc_controller_node = Node(
@@ -201,14 +219,14 @@ def generate_launch_description():
         # localization_launch,  # Include EKF localization
         # Spawn robot ke dalam Gazebo
         spawn_robot,
-        
+        run_plotjuggler,
         # Jalankan node-node lain
         joystick,
         twist_mux,  
         smc_controller_node,
         coordinate_publisher_node,
         line_creator_node,
-        
+        arduino_driver_node,
 
         # --- JALANKAN SPAWNER SECARA LANGSUNG ---
         # Spawner ini akan otomatis menunggu Controller Manager siap

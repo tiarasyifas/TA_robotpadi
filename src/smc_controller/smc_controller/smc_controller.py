@@ -28,9 +28,9 @@ class SmcControllerNode(Node):
         # self.PHI = 0.5         # Boundary layer untuk fungsi sat()
 
         self.V_CONSTANT = 1.2  # Kecepatan linear konstan (m/s)
-        self.Ky = 6.0          # Gain untuk error 'y'
-        self.K_omega = 1.5     # Gain switching untuk 'omega'
-        self.PHI = 0.5         # Boundary layer untuk fungsi sat()
+        self.Ky = 6          # Gain untuk error 'y'
+        self.K_omega = 1.0     # Gain switching untuk 'omega'
+        self.PHI = 2.0         # Boundary layer untuk fungsi sat()
 
         # --- State & Target ---
         self.initial_x = 10.0

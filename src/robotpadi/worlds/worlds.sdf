@@ -84,7 +84,7 @@
     </include>
 
     <model name='batu1'>
-      <static>true</static> <pose>13.0 0.9 0.01 1.2 0 -0.5</pose>
+      <static>true</static> <pose>13.0 0.8 0.01 1.2 0 -0.5</pose>
       <link name='link'>
         <collision name='collision'>
           <geometry>
