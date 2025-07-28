@@ -13,7 +13,7 @@ class CmdVelBridge(Node):
             '/cmd_vel_unstamped',
             self.listener_callback,
             10)
-        self.ser = serial.Serial('/dev/ttyACM0', 115200)  # Ganti sesuai port Arduino
+        self.ser = serial.Serial('/dev/ttyACM1', 115200)  # Ganti sesuai port Arduino
 
     def listener_callback(self, msg):
         linear = msg.linear.x

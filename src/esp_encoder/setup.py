@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'esp_enco'
+package_name = 'esp_encoder'
 
 setup(
     name=package_name,
@@ -16,11 +16,11 @@ setup(
     maintainer='satyo03',
     maintainer_email='satyosecond03@gmail.com',
     description='TODO: Package description',
-    license='TODO: License declaration',
+    license='Apache-2.0',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'esp_enco = esp_enco.esp_enco:main',
+            'esp_encoder = esp_encoder.esp_encoder:main'
         ],
     },
 )

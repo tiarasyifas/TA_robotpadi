@@ -1,17 +1,17 @@
 // === Konfigurasi Pin Motor ===
-const int RPWM_1 = 9;   // Motor 1
-const int LPWM_1 = 8;
-const int RPWM_2 = 7;   // Motor 2
-const int LPWM_2 = 6;
+const int RPWM_1 = 8;   // Motor 1
+const int LPWM_1 = 9;
+const int RPWM_2 = 6;   // Motor 2
+const int LPWM_2 = 7;
 const int RPWM_3 = 5;   // Motor 3
 const int LPWM_3 = 4;
-const int RPWM_4 = 3;   // Motor 4
-const int LPWM_4 = 2;
+const int RPWM_4 = 2;   // Motor 4
+const int LPWM_4 = 3;
 
 // === Parameter Robot ===
 const float WHEEL_BASE = 0.88;     // jarak antar roda (meter)
 const float WHEEL_DIAMETER = 0.35; // diameter roda (meter)
-const int MAX_PWM = 255;
+const int MAX_PWM = 100;
 
 float v = 0.0;  // linear.x dari ROS2
 float w = 0.0;  // angular.z dari ROS2
@@ -58,7 +58,7 @@ void applyKinematics(float v, float w) {
 }
 
 void controlMotor(int lpwm, int rpwm, float velocity) {
-  int pwm = constrain(abs(velocity) * 255.0, 0, MAX_PWM);
+  int pwm = constrain(abs(velocity) * 100.0, 0, MAX_PWM);
   if (velocity > 0) {
     analogWrite(rpwm, pwm);
     analogWrite(lpwm, 0);

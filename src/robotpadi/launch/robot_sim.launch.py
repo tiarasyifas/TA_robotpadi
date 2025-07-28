@@ -6,9 +6,8 @@ from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetE
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from launch.actions import RegisterEventHandler
-from launch.event_handlers import OnProcessExit
 from launch.actions import ExecuteProcess
+from launch.substitutions import FindExecutable
 
 
 def generate_launch_description():
@@ -29,6 +28,13 @@ def generate_launch_description():
     robot_file = os.path.join(pkg_path, 'urdf', 'main.xacro')
     rviz_file = os.path.join(pkg_path, 'rviz', 'view.rviz')
 
+    micro_ros_agent_process = ExecuteProcess(
+        cmd=[
+            FindExecutable(name='ros2'), 'run', 'micro_ros_agent', 'micro_ros_agent',
+            'serial', '--', 'dev', '/dev/ttyUSB0'  # <-- SESUAIKAN PORT SERIAL ANDA
+        ],
+        output='screen'
+    )
     # Include launch file untuk EKF
     # Panggil launch file dari paket robot_localization_bringup
     # localization_launch = IncludeLaunchDescription(
@@ -98,8 +104,6 @@ def generate_launch_description():
                     '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
                     '/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
                     '/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry',
-		            '/camera/image_raw@sensor_msgs/msg/Image@gz.msgs.Image',
-	                '/camera/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo',
 	                '/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
 	                '/joint_states@sensor_msgs/msg/JointState@gz.msgs.Model',
                     '/imu/data@sensor_msgs/msg/Imu@gz.msgs.IMU'
@@ -189,6 +193,14 @@ def generate_launch_description():
             ('/cmd_vel', '/cmd_vel_unstamped')
         ]  # Berguna untuk memastikan output print() muncul
     )
+
+    esp_encoder_node = Node(
+        package='esp_encoder',
+        executable='esp_encoder',
+        name='esp_encoder_node', # Sesuaikan dengan nama di dalam script Python
+        output='screen',
+    )
+
     run_plotjuggler = ExecuteProcess(
         cmd=['ros2', 'run', 'plotjuggler', 'plotjuggler'],
         output='screen',
@@ -227,37 +239,12 @@ def generate_launch_description():
         coordinate_publisher_node,
         line_creator_node,
         arduino_driver_node,
+        micro_ros_agent_process,
+        esp_encoder_node,
 
         # --- JALANKAN SPAWNER SECARA LANGSUNG ---
         # Spawner ini akan otomatis menunggu Controller Manager siap
         joint_state_broadcaster_spawner,
         diff_drive_base_controller_spawner,
     ])
-    # return LaunchDescription([  
-    #     DeclareLaunchArgument(
-    #         'use_sim_time',
-    #         default_value='true',
-    #         description='Use simulation (Gazebo) clock if true'
-    #     ),
-    #     set_env_vars,
-    #     gz_sim,
-    #     spawn_robot,
-    #     RegisterEventHandler(
-    #         event_handler=OnProcessExit(
-    #             target_action=spawn_robot,
-    #             on_exit=[joint_state_broadcaster_spawner],
-    #         )
-    #     ),
-    #     RegisterEventHandler(
-    #         event_handler=OnProcessExit(
-    #             target_action=joint_state_broadcaster_spawner,
-    #             on_exit=[diff_drive_base_controller_spawner],
-    #         )
-    #     ),
-    #     robot_state_publisher,
-    #     gz_ros_bridge,
-    #     # rviz_node,
-    #     joystick,
-    #     twist_mux,  
-    #     smc_controller_node
-    # ])
+  

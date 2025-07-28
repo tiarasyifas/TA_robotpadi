@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'arduino_driver = arduino_driver.arduino_driver:main',
+            'arduino_driver = arduino_driver.arduino_driver:main'
         ],
     },
 )
