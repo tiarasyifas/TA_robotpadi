@@ -80,8 +80,8 @@ class OdometryCalculator(Node):
         # rev_per_sec = (delta_ticks / PPR) / dt
         # rad_per_sec = rev_per_sec * 2 * pi
         # rpm = rev_per_sec * 60
-        rad_per_sec_per_wheel = [(d_ticks / self.ENCODER_PPR) * 2 * math.pi / dt for d_ticks in delta_ticks]
-        rpm_per_wheel = [(d_ticks / self.ENCODER_PPR) * 60 / dt for d_ticks in delta_ticks]
+        rad_per_sec_per_wheel = [(d_ticks / self.ENCODER_PPR)/0.02]
+        rpm_per_wheel = [(d_ticks / self.ENCODER_PPR)/0.02]
 
         # Publikasikan RPM
         for i in range(4):
