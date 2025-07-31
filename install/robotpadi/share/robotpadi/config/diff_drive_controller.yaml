@@ -35,6 +35,8 @@ diff_drive_controller:
     odom_frame_id: odom
     base_frame_id: base_footprint
     use_stamped_vel: false
+    # open_loop: false
+    # position_feedback: true
 
 joint_state_broadcaster:
   ros__parameters:

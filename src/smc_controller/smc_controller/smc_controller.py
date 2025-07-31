@@ -48,7 +48,7 @@ class SmcControllerNode(Node):
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
         self.imu_sub = self.create_subscription(Imu, '/imu/data', self.imu_callback, 10)
         self.path_sub = self.create_subscription(Path, '/line_trajectory', self.path_callback, 10)  # Path subscriber
-        self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.cmd_pub = self.create_publisher(Twist, '/cmd_vel_unstamped', 10)
 
         # --- Loop Kontrol ---
         self.timer = self.create_timer(0.1, self.control_loop) # 10 Hz

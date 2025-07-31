@@ -12,6 +12,7 @@ const int LPWM_4 = 3;
 const float WHEEL_BASE = 0.88;     // jarak antar roda (meter)
 const float WHEEL_DIAMETER = 0.35; // diameter roda (meter)
 const int MAX_PWM = 100;
+const float MAX_SPEED_MS = 1.5;
 
 float v = 0.0;  // linear.x dari ROS2
 float w = 0.0;  // angular.z dari ROS2
@@ -58,11 +59,13 @@ void applyKinematics(float v, float w) {
 }
 
 void controlMotor(int lpwm, int rpwm, float velocity) {
-  int pwm = constrain(abs(velocity) * 100.0, 0, MAX_PWM);
-  if (velocity > 0) {
+  int pwm_value = (int)((abs(velocity) / MAX_SPEED_MS) * MAX_PWM);
+  pwm_value = constrain(pwm_value, 0, MAX_PWM); // Pastikan tidak melebihi batas
+
+  if (velocity > 0.01) {
     analogWrite(rpwm, pwm);
     analogWrite(lpwm, 0);
-  } else if (velocity < 0) {
+  } else if (velocity < 0.01) {
     analogWrite(rpwm, 0);
     analogWrite(lpwm, pwm);
   } else {

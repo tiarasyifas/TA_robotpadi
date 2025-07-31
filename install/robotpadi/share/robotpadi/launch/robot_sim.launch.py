@@ -197,7 +197,7 @@ def generate_launch_description():
     esp_encoder_node = Node(
         package='esp_encoder',
         executable='esp_encoder',
-        name='esp_encoder_node', # Sesuaikan dengan nama di dalam script Python
+        name='encoder_to_odom', # Sesuaikan dengan nama di dalam script Python
         output='screen',
     )
 

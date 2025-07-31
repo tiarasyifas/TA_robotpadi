@@ -1,121 +1,113 @@
-// Include library micro-ROS untuk Arduino
 #include <micro_ros_arduino.h>
-
-// Include library ROS Client (RCL) dan Executor
-#include <stdio.h>
 #include <rcl/rcl.h>
 #include <rcl/error_handling.h>
 #include <rclc/rclc.h>
 #include <rclc/executor.h>
+#include <std_msgs/msg/int32.h>
+#include <std_msgs/msg/empty.h>
 
-// Include tipe pesan ROS yang akan digunakan (Int32MultiArray)
-#include <std_msgs/msg/int32_multi_array.h>
-
-// Definisi pin untuk 4 encoder
+// --- Encoder Pin Definitions ---
 #define ENCODER_PIN_A1 33
 #define ENCODER_PIN_B1 32
-#define ENCODER_PIN_A2 26
-#define ENCODER_PIN_B2 25
+#define ENCODER_PIN_A2 22
+#define ENCODER_PIN_B2 23
 #define ENCODER_PIN_A3 5
 #define ENCODER_PIN_B3 18
-#define ENCODER_PIN_A4 22
-#define ENCODER_PIN_B4 23
+#define ENCODER_PIN_A4 26
+#define ENCODER_PIN_B4 25
 
-// Variabel volatile untuk menyimpan data hitungan dari encoder
-// Volatile diperlukan karena variabel ini diubah di dalam Interrupt Service Routine (ISR)
-volatile long encoder1_count = 0;
-volatile long encoder2_count = 0;
-volatile long encoder3_count = 0;
-volatile long encoder4_count = 0;
+// --- Encoder Tick Counters ---
+volatile long encoderCount1 = 0;
+volatile long encoderCount2 = 0;
+volatile long encoderCount3 = 0;
+volatile long encoderCount4 = 0;
 
-// Deklarasi objek-objek micro-ROS
-rcl_publisher_t publisher;
-std_msgs__msg__Int32MultiArray msg; // Menggunakan tipe pesan Int32MultiArray
-rclc_executor_t executor;
+// --- ROS2 Node and Publisher/Subscriber ---
 rclc_support_t support;
 rcl_allocator_t allocator;
 rcl_node_t node;
 rcl_timer_t timer;
+rclc_executor_t executor;
 
-// Makro untuk penanganan error. Jika fungsi ROS gagal, panggil error_loop()
-#define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){error_loop();}}
-#define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){}}
+rcl_publisher_t encoder_pub1, encoder_pub2, encoder_pub3, encoder_pub4;
+std_msgs__msg__Int32 encoder_msg1, encoder_msg2, encoder_msg3, encoder_msg4;
 
-// Fungsi yang akan dipanggil jika terjadi error fatal pada koneksi micro-ROS
-void error_loop(){
-  Serial.println("Error in micro-ROS. Entering infinite loop.");
-  while(1){
-    delay(1000);
+// --- Reset Encoder Subscriber ---
+rcl_subscription_t reset_sub;
+std_msgs__msg__Empty reset_msg;
+
+// --- Helper Macros ---
+#define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if ((temp_rc != RCL_RET_OK)) { error_loop(); } }
+#define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if ((temp_rc != RCL_RET_OK)) {} }
+
+void error_loop() {
+  while (1) {
+    delay(100);
   }
 }
 
-// --- Interrupt Service Routines (ISR) untuk membaca Encoder ---
-// ISR harus secepat mungkin. Hanya membaca pin dan mengubah variabel counter.
-
-void IRAM_ATTR readEncoder1(){
-  // Baca pin B untuk menentukan arah putaran
-  if (digitalRead(ENCODER_PIN_B1) == HIGH) {
-    encoder1_count++;
-  } else {
-    encoder1_count--;
-  }
+// --- Reset Function ---
+void reset_encoder() {
+  encoderCount1 = 0;
+  encoderCount2 = 0;
+  encoderCount3 = 0;
+  encoderCount4 = 0;
 }
 
-void IRAM_ATTR readEncoder2(){
-  if (digitalRead(ENCODER_PIN_B2) == HIGH) {
-    encoder2_count++;
-  } else {
-    encoder2_count--;
-  }
+// --- Reset Topic Callback ---
+void reset_callback(const void *msgin) {
+  (void)msgin;
+  reset_encoder();
 }
 
-void IRAM_ATTR readEncoder3(){
-  if (digitalRead(ENCODER_PIN_B3) == HIGH) {
-    encoder3_count++;
-  } else {
-    encoder3_count--;
-  }
-}
-
-void IRAM_ATTR readEncoder4(){
-  if (digitalRead(ENCODER_PIN_B4) == HIGH) {
-    encoder4_count++;
-  } else {
-    encoder4_count--;
-  }
-}
-
-
-// Callback function untuk timer, dijalankan setiap 1 detik
-void timer_callback(rcl_timer_t * timer, int64_t last_call_time)
-{  
+// --- Timer Callback: Publishes Encoder Data ---
+void timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
   RCLC_UNUSED(last_call_time);
   if (timer != NULL) {
-    // Salin nilai counter encoder ke dalam pesan ROS
-    // (Membaca variabel volatile dengan aman)
-    noInterrupts(); // Nonaktifkan interrupt sementara untuk pembacaan yang aman
-    msg.data.data[0] = encoder1_count;
-    msg.data.data[1] = encoder2_count;
-    msg.data.data[2] = encoder3_count;
-    msg.data.data[3] = encoder4_count;
-    interrupts(); // Aktifkan kembali interrupt
+    encoder_msg1.data = encoderCount1;
+    encoder_msg2.data = encoderCount2;
+    encoder_msg3.data = encoderCount3;
+    encoder_msg4.data = encoderCount4;
 
-    // Publikasikan pesan
-    RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
+    RCSOFTCHECK(rcl_publish(&encoder_pub1, &encoder_msg1, NULL));
+    RCSOFTCHECK(rcl_publish(&encoder_pub2, &encoder_msg2, NULL));
+    RCSOFTCHECK(rcl_publish(&encoder_pub3, &encoder_msg3, NULL));
+    RCSOFTCHECK(rcl_publish(&encoder_pub4, &encoder_msg4, NULL));
   }
 }
 
+// --- Encoder Callback Functions ---
+void IRAM_ATTR EncoderCallback1() {
+  bool A = digitalRead(ENCODER_PIN_A1);
+  bool B = digitalRead(ENCODER_PIN_B1);
+  encoderCount1 += (A == B) ? 1 : -1;
+}
+
+void IRAM_ATTR EncoderCallback2() {
+  bool A = digitalRead(ENCODER_PIN_A2);
+  bool B = digitalRead(ENCODER_PIN_B2);
+  encoderCount2 += (A == B) ? 1 : -1;
+}
+
+void IRAM_ATTR EncoderCallback3() {
+  bool A = digitalRead(ENCODER_PIN_A3);
+  bool B = digitalRead(ENCODER_PIN_B3);
+  encoderCount3 += (A == B) ? 1 : -1;
+}
+
+void IRAM_ATTR EncoderCallback4() {
+  bool A = digitalRead(ENCODER_PIN_A4);
+  bool B = digitalRead(ENCODER_PIN_B4);
+  encoderCount4 += (A == B) ? 1 : -1;
+}
+
+// --- Setup Function ---
 void setup() {
-  // Mulai komunikasi serial untuk debugging
   Serial.begin(115200);
-
-  // Atur transport layer untuk micro-ROS (misal: Serial, WiFi, Ethernet)
   set_microros_transports();
-  
-  delay(2000);
+  delay(2000);  // pastikan koneksi siap
 
-  // --- Setup Encoder ---
-  // Atur semua pin encoder sebagai INPUT_PULLUP
+  // Init Encoder Pins
   pinMode(ENCODER_PIN_A1, INPUT_PULLUP);
   pinMode(ENCODER_PIN_B1, INPUT_PULLUP);
   pinMode(ENCODER_PIN_A2, INPUT_PULLUP);
@@ -125,56 +117,43 @@ void setup() {
   pinMode(ENCODER_PIN_A4, INPUT_PULLUP);
   pinMode(ENCODER_PIN_B4, INPUT_PULLUP);
 
-  // Pasang interrupt pada pin A dari setiap encoder
-  // ISR akan dijalankan setiap kali ada perubahan sinyal (RISING and FALLING edge)
-  attachInterrupt(digitalPinToInterrupt(ENCODER_PIN_A1), readEncoder1, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(ENCODER_PIN_A2), readEncoder2, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(ENCODER_PIN_A3), readEncoder3, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(ENCODER_PIN_A4), readEncoder4, CHANGE);
+  // Attach Interrupts
+  attachInterrupt(digitalPinToInterrupt(ENCODER_PIN_A1), EncoderCallback1, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(ENCODER_PIN_A2), EncoderCallback2, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(ENCODER_PIN_A3), EncoderCallback3, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(ENCODER_PIN_A4), EncoderCallback4, CHANGE);
 
-
-  // --- Setup micro-ROS ---
+  // ROS2 Init
   allocator = rcl_get_default_allocator();
-
-  // Buat init_options
   RCCHECK(rclc_support_init(&support, 0, NULL, &allocator));
+  RCCHECK(rclc_node_init_default(&node, "encoder_reader_node", "", &support));
 
-  // Buat node
-  RCCHECK(rclc_node_init_default(&node, "micro_ros_encoder_node", "", &support));
+  // Publishers
+  RCCHECK(rclc_publisher_init_default(&encoder_pub1, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32), "encoder1"));
+  RCCHECK(rclc_publisher_init_default(&encoder_pub2, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32), "encoder2"));
+  RCCHECK(rclc_publisher_init_default(&encoder_pub3, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32), "encoder3"));
+  RCCHECK(rclc_publisher_init_default(&encoder_pub4, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32), "encoder4"));
 
-  // Buat publisher
-  RCCHECK(rclc_publisher_init_default(
-    &publisher,
-    &node,
-    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32MultiArray), // Tipe pesan diubah
-    "encoder_counts")); // Nama topik diubah
+  // Subscriber: reset_encoder
+  RCCHECK(rclc_subscription_init_default(&reset_sub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Empty), "reset_encoder"));
 
-  // Buat timer, atur untuk berjalan setiap 100 ms (10 Hz)
-  const unsigned int timer_timeout = 100;
-  RCCHECK(rclc_timer_init_default(
-    &timer,
-    &support,
-    RCL_MS_TO_NS(timer_timeout),
-    timer_callback));
+  // Timer & Executor
+  const unsigned int timer_timeout = 100; // ms
+  RCCHECK(rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(timer_timeout), timer_callback));
 
-  // Buat executor
-  RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
+  RCCHECK(rclc_executor_init(&executor, &support.context, 2, &allocator));
   RCCHECK(rclc_executor_add_timer(&executor, &timer));
+  RCCHECK(rclc_executor_add_subscription(&executor, &reset_sub, &reset_msg, &reset_callback, ON_NEW_DATA));
 
-  // Inisialisasi pesan Int32MultiArray
-  // Alokasikan memori untuk 4 integer
-  msg.data.capacity = 4;
-  msg.data.size = 4;
-  msg.data.data = (int32_t*) malloc(msg.data.capacity * sizeof(int32_t));
-  
-  // Beri nilai awal 0 untuk semua elemen array
-  for(int i = 0; i < 4; i++) {
-    msg.data.data[i] = 0;
-  }
+  // Init encoder messages
+  encoder_msg1.data = 0;
+  encoder_msg2.data = 0;
+  encoder_msg3.data = 0;
+  encoder_msg4.data = 0;
 }
 
+// --- Loop Function ---
 void loop() {
-  delay(10); // Penundaan singkat untuk stabilitas
-  // Jalankan executor untuk memproses event seperti timer callback
+  delay(10); // delay ringan
   RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100)));
 }
