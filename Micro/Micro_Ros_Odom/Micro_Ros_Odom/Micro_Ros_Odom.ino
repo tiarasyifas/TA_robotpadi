@@ -17,10 +17,10 @@
 #define ENCODER_PIN_B4 25
 
 // --- Encoder Tick Counters ---
-volatile long encoderCount1 = 0;
-volatile long encoderCount2 = 0;
-volatile long encoderCount3 = 0;
-volatile long encoderCount4 = 0;
+volatile int encoderCount1 = 0;
+volatile int encoderCount2 = 0;
+volatile int encoderCount3 = 0;
+volatile int encoderCount4 = 0;
 
 // --- ROS2 Node and Publisher/Subscriber ---
 rclc_support_t support;
@@ -46,13 +46,6 @@ void error_loop() {
   }
 }
 
-// --- Reset Function ---
-void reset_encoder() {
-  encoderCount1 = 0;
-  encoderCount2 = 0;
-  encoderCount3 = 0;
-  encoderCount4 = 0;
-}
 
 // --- Reset Topic Callback ---
 void reset_callback(const void *msgin) {
@@ -103,19 +96,24 @@ void IRAM_ATTR EncoderCallback4() {
 
 // --- Setup Function ---
 void setup() {
+  encoderCount1 = 0;
+  encoderCount2 = 0;
+  encoderCount3 = 0;
+  encoderCount4 = 0;
+  
   Serial.begin(115200);
   set_microros_transports();
   delay(2000);  // pastikan koneksi siap
 
   // Init Encoder Pins
-  pinMode(ENCODER_PIN_A1, INPUT_PULLUP);
-  pinMode(ENCODER_PIN_B1, INPUT_PULLUP);
-  pinMode(ENCODER_PIN_A2, INPUT_PULLUP);
-  pinMode(ENCODER_PIN_B2, INPUT_PULLUP);
-  pinMode(ENCODER_PIN_A3, INPUT_PULLUP);
-  pinMode(ENCODER_PIN_B3, INPUT_PULLUP);
-  pinMode(ENCODER_PIN_A4, INPUT_PULLUP);
-  pinMode(ENCODER_PIN_B4, INPUT_PULLUP);
+//  pinMode(ENCODER_PIN_A1, INPUT_PULLUP);
+//  pinMode(ENCODER_PIN_B1, INPUT_PULLUP);
+//  pinMode(ENCODER_PIN_A2, INPUT_PULLUP);
+//  pinMode(ENCODER_PIN_B2, INPUT_PULLUP);
+//  pinMode(ENCODER_PIN_A3, INPUT_PULLUP);
+//  pinMode(ENCODER_PIN_B3, INPUT_PULLUP);
+//  pinMode(ENCODER_PIN_A4, INPUT_PULLUP);
+//  pinMode(ENCODER_PIN_B4, INPUT_PULLUP);
 
   // Attach Interrupts
   attachInterrupt(digitalPinToInterrupt(ENCODER_PIN_A1), EncoderCallback1, CHANGE);

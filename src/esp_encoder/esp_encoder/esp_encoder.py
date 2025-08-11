@@ -39,18 +39,18 @@ class OdometryCalculator(Node):
         # encoder2 -> Front Right (W_FR)
         # encoder3 -> Rear Left (W_RL)
         # encoder4 -> Rear Right (W_RR)
-        self.create_subscription(Int32, 'encoder1', lambda msg: self.encoder_callback(msg, 0), 10)
-        self.create_subscription(Int32, 'encoder2', lambda msg: self.encoder_callback(msg, 1), 10)
-        self.create_subscription(Int32, 'encoder3', lambda msg: self.encoder_callback(msg, 2), 10)
-        self.create_subscription(Int32, 'encoder4', lambda msg: self.encoder_callback(msg, 3), 10)
+        self.create_subscription(Int32, '/encoder1', lambda msg: self.encoder_callback(msg, 0), 10)
+        self.create_subscription(Int32, '/encoder2', lambda msg: self.encoder_callback(msg, 1), 10)
+        self.create_subscription(Int32, '/encoder3', lambda msg: self.encoder_callback(msg, 2), 10)
+        self.create_subscription(Int32, '/encoder4', lambda msg: self.encoder_callback(msg, 3), 10)
 
         # --- Publishers ---
         self.odom_pub = self.create_publisher(Odometry, 'odom', 10)
         self.rpm_pubs = [
-            self.create_publisher(Float64, 'rpm1', 10), # FL
-            self.create_publisher(Float64, 'rpm2', 10), # FR
-            self.create_publisher(Float64, 'rpm3', 10), # RL
-            self.create_publisher(Float64, 'rpm4', 10)  # RR
+            self.create_publisher(Float64, '/rpm1', 10), # FL
+            self.create_publisher(Float64, '/rpm2', 10), # FR
+            self.create_publisher(Float64, '/rpm3', 10), # RL
+            self.create_publisher(Float64, '/rpm4', 10)  # RR
         ]
 
         # --- TF Broadcaster ---
@@ -80,8 +80,8 @@ class OdometryCalculator(Node):
         # rev_per_sec = (delta_ticks / PPR) / dt
         # rad_per_sec = rev_per_sec * 2 * pi
         # rpm = rev_per_sec * 60
-        rad_per_sec_per_wheel = [(d_ticks / self.ENCODER_PPR)/0.02]
-        rpm_per_wheel = [(d_ticks / self.ENCODER_PPR)/0.02]
+        rad_per_sec_per_wheel = [(delta_ticks / self.ENCODER_PPR)/0.02]
+        rpm_per_wheel = [(rad_per_sec_per_wheel * 60)]
 
         # Publikasikan RPM
         for i in range(4):
