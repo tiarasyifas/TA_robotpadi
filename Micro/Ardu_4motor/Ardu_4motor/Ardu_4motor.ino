@@ -10,7 +10,7 @@ const int LPWM_4 = 3;
 
 // === Parameter Robot ===
 const float WHEEL_BASE = 0.88;     // jarak antar roda (meter)
-const float WHEEL_DIAMETER = 0.35; // diameter roda (meter)
+const float WHEEL_DIAMETER = 0.40; // diameter roda (meter)
 const int MAX_PWM = 100;
 const float MAX_SPEED_MS = 1.5;
 
